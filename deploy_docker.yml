@@ -1,0 +1,62 @@
+---
+- name: Deploy Docker-CE
+  hosts: all
+  user: root
+  tasks:
+
+# CentOS specififc: 
+
+    - name: install dependencies via yum
+      yum:
+        name: ['yum-utils', 'epel-release', 'lvm2', 'device-mapper-persistent-data']
+        state: latest
+      when: ansible_distribution == "CentOS"
+
+    - name: Add docker-repository
+      get_url:
+        url: https://download.docker.com/linux/centos/docker-ce.repo
+        dest: /etc/yum.repos.d/docker-ce.repo
+      when: ansible_distribution == "CentOS"
+      
+# Ubuntu specific:
+
+    - name: install dependencies via apt
+      apt:
+        name: ['apt-transport-https', 'ca-certificates', 'curl', 'gnupg-agent', 'software-properties-common']
+        state: latest
+        update_cache: yes
+      when: ansible_distribution == "Ubuntu"
+
+    - name: Add GPG key
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
+      when: ansible_distribution == "Ubuntu"
+    
+    - name: Add Docker Repository
+      apt_repository:
+        repo: deb https://download.docker.com/linux/ubuntu bionic stable
+        state: present
+      when: ansible_distribution == "Ubuntu"
+
+    - name: Apt cache update
+      apt:
+        update_cache: yes
+      when: ansible_distribution == "Ubuntu"
+
+# OS independent
+    - name: Install docker
+      package:
+        name: docker-ce
+        state: latest
+
+    - name: Start Docker service
+      systemd:
+        name: docker
+        state: started
+        enabled: yes
+
+    - name: Install docker-compose
+      package:
+        name: docker-compose
+        state: latest
